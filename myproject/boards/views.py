@@ -76,19 +76,16 @@ def reply_topic(request, pk, topic_pk):
     topic = get_object_or_404(Topic, board__pk=pk, pk=topic_pk)
     form = PostForm(request.POST or None)
     data_for_reply_save_dict = {'form':form, 'user':request.user, 
-                                'topic':topic, 'board_pk':pk, 'topic_pk':topic_pk}
+                                'topic':topic}
     if form.is_valid():
         topic_post_url = reply_form_save(data_for_reply_save_dict)
         return redirect(topic_post_url)
-
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})
 
 def reply_form_save(data_for_reply_save_dict):
     form = data_for_reply_save_dict['form']
-    topic = data_for_reply_save_dict['topic']
-    pk = data_for_reply_save_dict['board_pk']
-    topic_pk = data_for_reply_save_dict['topic_pk']
     user = data_for_reply_save_dict['user']
+    topic = data_for_reply_save_dict['topic']
 
     post = form.save(commit=False)
     post.topic = topic
@@ -96,13 +93,12 @@ def reply_form_save(data_for_reply_save_dict):
     post.save()
 
     update_topic_last_updated(topic)
+    board_pk = topic.board.pk
 
-    topic_url = reverse('topic_posts', kwargs={'pk': pk, 'topic_pk': topic_pk})
-    topic_post_url = '{url}?page={page}#{id}'.format(
-        url=topic_url,
-        id=post.pk,
-        page=topic.get_page_count()
-    )
+    topic_url = reverse('topic_posts', kwargs={'pk': board_pk, 'topic_pk': topic.pk})
+    topic_post_url = '{url}?page={page}#{id}'.format(url=topic_url, id=post.pk,
+                                                        page=topic.get_page_count()
+                                                    )
     return topic_post_url
         
 
