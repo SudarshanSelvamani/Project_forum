@@ -57,7 +57,7 @@ class EditPermissionForOwnerOfThePost(PostUpdateViewTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.get(self.url)
 
-    def test_status_code_200_for_owner_of_post(self):
+    def test_page_served_for_owner_of_post(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_PostUpdateView_object_is_served(self):
@@ -67,7 +67,7 @@ class EditPermissionForOwnerOfThePost(PostUpdateViewTestCase):
     def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_response_contains_form_ModelForm(self):
+    def test_response_contains_ModelForm_object(self):
         form = self.response.context.get('form')
         self.assertIsInstance(form, ModelForm)
 
@@ -79,7 +79,7 @@ class EditPermissionForOwnerOfThePost(PostUpdateViewTestCase):
         self.assertContains(self.response, '<textarea', 1)
 
 
-class SuccessfulPostUpdateViewTests(PostUpdateViewTestCase):
+class SuccessfulFormPostUpdateViewTests(PostUpdateViewTestCase):
     def setUp(self):
         super().setUp()
         self.client.login(username=self.username, password=self.password)
@@ -97,7 +97,7 @@ class SuccessfulPostUpdateViewTests(PostUpdateViewTestCase):
         self.assertEquals(self.post.message, 'edited message')
 
 
-class InvalidPostUpdateViewTests(PostUpdateViewTestCase):
+class InvalidFormPostUpdateViewTests(PostUpdateViewTestCase):
     def setUp(self):
         '''
         Submit an empty dictionary to the `reply_topic` view
@@ -106,12 +106,12 @@ class InvalidPostUpdateViewTests(PostUpdateViewTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.post(self.url, {})
 
-    def test_status_code(self):
+    def test_invalid_form_input_return_to_same_page(self):
         '''
         An invalid form submission should return to the same page
         '''
         self.assertEquals(self.response.status_code, 200)
 
-    def test_form_errors(self):
+    def test_invalid_input_form_errors(self):
         form = self.response.context.get('form')
         self.assertTrue(form.errors)

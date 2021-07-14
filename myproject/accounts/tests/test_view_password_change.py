@@ -15,21 +15,21 @@ class PasswordChangeTests(TestCase):
         self.client.login(username=username, password=password)
         self.response = self.client.get(url)
 
-    def test_status_code(self):
+    def test_page_is_served_right(self):
         self.assertEquals(self.response.status_code, 200)
 
-    def test_url_resolves_correct_view(self):
+    def test_url_resolves_PasswordChangeView(self):
         view = resolve('/settings/password/')
         self.assertEquals(view.func.view_class, auth_views.PasswordChangeView)
 
-    def test_csrf(self):
+    def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_contains_form(self):
+    def test_response_contains_PassordChangeForm(self):
         form = self.response.context.get('form')
         self.assertIsInstance(form, PasswordChangeForm)
 
-    def test_form_inputs(self):
+    def test_PasswordChangeForm_inputs(self):
         '''
         The view must contain four inputs: csrf, old_password, new_password1, new_password2
         '''
@@ -38,7 +38,7 @@ class PasswordChangeTests(TestCase):
 
 
 class LoginRequiredPasswordChangeTests(TestCase):
-    def test_redirection(self):
+    def test_login_required_for_password_change(self):
         url = reverse('password_change')
         login_url = reverse('login')
         response = self.client.get(url)
@@ -65,7 +65,7 @@ class SuccessfulPasswordChangeTests(PasswordChangeTestCase):
             'new_password2': 'new_password',
         })
 
-    def test_redirection(self):
+    def test_redirect_to_password_change_done(self):
         '''
         A valid form submission should redirect the user
         '''
@@ -79,10 +79,10 @@ class SuccessfulPasswordChangeTests(PasswordChangeTestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('new_password'))
 
-    def test_user_authentication(self):
+    def test_user_authenticated_after_password_change(self):
         '''
         Create a new request to an arbitrary page.
-        The resulting response should now have an `user` to its context, after a successful sign up.
+        The resulting response should now have an `user` to its context, after a successful password change.
         '''
         response = self.client.get(reverse('home'))
         user = response.context.get('user')
@@ -90,17 +90,17 @@ class SuccessfulPasswordChangeTests(PasswordChangeTestCase):
 
 
 class InvalidPasswordChangeTests(PasswordChangeTestCase):
-    def test_status_code(self):
+    def test_invalid_form_return_to_same_page(self):
         '''
         An invalid form submission should return to the same page
         '''
         self.assertEquals(self.response.status_code, 200)
 
-    def test_form_errors(self):
+    def test_invalid_input_form_errors(self):
         form = self.response.context.get('form')
         self.assertTrue(form.errors)
 
-    def test_didnt_change_password(self):
+    def test_invalid_input_didnt_change_password(self):
         '''
         refresh the user instance from the database to make
         sure we have the latest data.

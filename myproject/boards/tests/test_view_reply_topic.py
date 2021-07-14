@@ -34,21 +34,21 @@ class ReplyTopicTests(ReplyTopicTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.get(self.url)
 
-    def test_status_code(self):
+    def test_page_served_right(self):
         self.assertEquals(self.response.status_code, 200)
 
-    def test_view_function(self):
+    def test_url_resolves_PostListView(self):
         view = resolve('/boards/1/topics/1/reply/')
         self.assertEquals(view.func, reply_topic)
 
-    def test_csrf(self):
+    def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_contains_form(self):
+    def test_response_contains_PostForm_object(self):
         form = self.response.context.get('form')
         self.assertIsInstance(form, PostForm)
 
-    def test_form_inputs(self):
+    def test_PostForm_inputs(self):
         '''
         The view must contain two inputs: csrf, message textarea
         '''
@@ -62,7 +62,7 @@ class SuccessfulReplyTopicTests(ReplyTopicTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.post(self.url, {'message': 'hello, world!'})
 
-    def test_redirection(self):
+    def test_redirect_postListView_after_reply(self):
         '''
         A valid form submission should redirect the user
         '''
@@ -90,12 +90,12 @@ class InvalidReplyTopicTests(ReplyTopicTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.post(self.url, {'ssss':'sss'})
 
-    def test_status_code(self):
+    def test_invalid_form_should_return_to_same_page(self):
         '''
         An invalid form submission should return to the same page
         '''
         self.assertEquals(self.response.status_code, 200)
 
-    def test_form_errors(self):
+    def test_invalid_input_form_errors(self):
         form = self.response.context.get('form')
         self.assertTrue(form.errors)

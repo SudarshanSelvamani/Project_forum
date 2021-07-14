@@ -12,7 +12,7 @@ class NewTopicTests(TestCase):
         User.objects.create_user(username='john', email='john@doe.com', password='123')
         self.client.login(username='john', password='123')
 
-    def test_new_topic_view_success_status_code(self):
+    def test_page_served_right(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
@@ -32,18 +32,18 @@ class NewTopicTests(TestCase):
         response = self.client.get(new_topic_url)
         self.assertContains(response, 'href="{0}"'.format(board_topics_url))
 
-    def test_csrf(self):
+    def test_presence_of_csrf(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.get(url)
         self.assertContains(response, 'csrfmiddlewaretoken')
 
-    def test_contains_form(self):
+    def test_response_contains_NewTopicForm_object(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.get(url)
         form = response.context.get('form')
         self.assertIsInstance(form, NewTopicForm)
 
-    def test_new_topic_valid_post_data(self):
+    def test_new_topic_valid_form_post_data(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         data = {
             'subject': 'Test title',
@@ -53,18 +53,22 @@ class NewTopicTests(TestCase):
         self.assertTrue(Topic.objects.exists())
         self.assertTrue(Post.objects.exists())
 
-    def test_new_topic_invalid_post_data(self):
+    def test_invalid_form_input_redirects_to_same_page_with_errors(self):
         '''
         Invalid post data should not redirect
         The expected behavior is to show the form again with validation errors
         '''
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.post(url, {'adas':'lll'})
-        form = response.context.get('form')
         self.assertEquals(response.status_code, 200)
+    
+    def test_invalid_input_gives_form_errors(self):
+        url = reverse('new_topic', kwargs={'pk': 1})
+        response = self.client.post(url, {'adas':'lll'})
+        form = response.context.get('form')
         self.assertTrue(form.errors)
 
-    def test_new_topic_invalid_post_data_empty_fields(self):
+    def test_empty_fields_redirects_to_same_page(self):
         '''
         Invalid post data should not redirect
         The expected behavior is to show the form again with validation errors
@@ -78,6 +82,17 @@ class NewTopicTests(TestCase):
         self.assertEquals(response.status_code, 200)
         self.assertFalse(Topic.objects.exists())
         self.assertFalse(Post.objects.exists())
+    
+    def test_empty_fields_does_not_create_topic_and_first_post(self):        
+        url = reverse('new_topic', kwargs={'pk': 1})
+        data = {
+            'subject': '',
+            'message': ''
+        }
+        response = self.client.post(url, data)
+        self.assertFalse(Topic.objects.exists())
+        self.assertFalse(Post.objects.exists())
+
 
 
 
@@ -88,6 +103,6 @@ class LoginRequiredNewTopicTests(TestCase):
         self.url = reverse('new_topic', kwargs={'pk': 1})
         self.response = self.client.get(self.url)
 
-    def test_redirection(self):
+    def test_redirect_to_login(self):
         login_url = reverse('login')
         self.assertRedirects(self.response, '{login_url}?next={url}'.format(login_url=login_url, url=self.url))

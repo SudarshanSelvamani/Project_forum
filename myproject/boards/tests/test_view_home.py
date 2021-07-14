@@ -2,8 +2,9 @@ from django.test import TestCase
 from django.urls import resolve, reverse
 
 from ..models import Board
-from ..views import BoardListView  
+from ..views import BoardListView
 
+#Home view(BoardListView) is tested. 
 
 class HomeTests(TestCase):
     def setUp(self):
@@ -11,7 +12,7 @@ class HomeTests(TestCase):
         url = reverse('home')
         self.response = self.client.get(url)
 
-    def test_home_view_status_code(self):
+    def test_page_served_right(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_home_url_resolves_home_view(self):

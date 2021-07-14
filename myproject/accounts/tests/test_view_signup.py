@@ -1,4 +1,3 @@
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.urls import resolve, reverse
 from ..forms import SignUpForm
@@ -12,21 +11,21 @@ class SignUpTests(TestCase):
         url = reverse('signup')
         self.response = self.client.get(url)
 
-    def test_signup_status_code(self):
+    def test_page_is_served_right(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_signup_url_resolves_signup_view(self):
         view = resolve('/signup/')
         self.assertEquals(view.func, signup)
     
-    def test_csrf(self):
+    def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_contains_form(self):
+    def test_response_contains_SignUpForm_object(self):
         form = self.response.context.get('form')
-        self.assertIsInstance(form, UserCreationForm)
+        self.assertIsInstance(form, SignUpForm)
 
-    def test_form_inputs(self):
+    def test_SignUpForm_inputs(self):
         '''
         The view must contain five inputs: csrf, username, email, password1, password2
         '''
@@ -34,6 +33,12 @@ class SignUpTests(TestCase):
         self.assertContains(self.response, 'type="text"', 1)
         self.assertContains(self.response, 'type="email"', 1)
         self.assertContains(self.response, 'type="password"', 2)
+    
+    def test_SignUpForm_has_fields(self):
+        form = SignUpForm()
+        expected = ['username', 'email', 'password1', 'password2',]
+        actual = list(form.fields)
+        self.assertSequenceEqual(expected, actual)
 
 
 
@@ -49,16 +54,16 @@ class SuccessfulSignUpTests(TestCase):
         self.response = self.client.post(url, data)
         self.home_url = reverse('home')
 
-    def test_redirection(self):
+    def test_redirect_to_home_page(self):
         '''
         A valid form submission should redirect the user to the home page
         '''
         self.assertRedirects(self.response, self.home_url)
 
-    def test_user_creation(self):
+    def test_user_is_created(self):
         self.assertTrue(User.objects.exists())
 
-    def test_user_authentication(self):
+    def test_user_is_authenticated(self):
         '''
         Create a new request to an arbitrary page.
         The resulting response should now have a `user` to its context,
@@ -74,15 +79,15 @@ class InvalidSignUpTests(TestCase):
         url = reverse('signup')
         self.response = self.client.post(url, {})  # submit an empty dictionary
 
-    def test_signup_status_code(self):
+    def test_invalid_form_input_redirects_to_same_page(self):
         '''
         An invalid form submission should return to the same page
         '''
         self.assertEquals(self.response.status_code, 200)
 
-    def test_form_errors(self):
+    def test_invalid_input_form_errors(self):
         form = self.response.context.get('form')
         self.assertTrue(form.errors)
 
-    def test_dont_create_user(self):
+    def test_invalid_input_does_not_create_user(self):
         self.assertFalse(User.objects.exists())
