@@ -58,6 +58,11 @@ def new_topic(request, pk):
     board = get_object_or_404(Board, pk=pk)
     form = NewTopicForm(request.POST or None)
     if form.is_valid():
+        topic = topic_and_first_post_save(request,form,board)
+        return redirect('topic_posts', pk=pk, topic_pk=topic.pk)
+    return render(request, 'new_topic.html', {'board': board, 'form': form})
+
+def topic_and_first_post_save(request, form, board):
         topic = form.save(commit=False)
         topic.board = board
         topic.starter = request.user
@@ -67,8 +72,7 @@ def new_topic(request, pk):
             topic=topic,
             created_by=request.user
         )
-        return redirect('topic_posts', pk=pk, topic_pk=topic.pk)
-    return render(request, 'new_topic.html', {'board': board, 'form': form})
+        return topic
 
 
 @login_required
@@ -78,30 +82,31 @@ def reply_topic(request, pk, topic_pk):
     data_for_reply_save_dict = {'form':form, 'user':request.user, 
                                 'topic':topic}
     if form.is_valid():
-        topic_post_url = reply_form_save(data_for_reply_save_dict)
+        post = reply_form_save(data_for_reply_save_dict)
+        topic_post_url = generate_paginated_url_for_posts(topic,post)
         return redirect(topic_post_url)
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})
+
+
+def generate_paginated_url_for_posts(topic, post):
+    board_pk = topic.board.pk
+    topic_url = reverse('topic_posts', kwargs={'pk': board_pk, 'topic_pk': topic.pk})
+    topic_post_url = '{url}?page={page}#{id}'.format(url=topic_url, id=post.pk,
+                                                    page=topic.get_page_count()
+                                                    )
+    return topic_post_url
 
 def reply_form_save(data_for_reply_save_dict):
     form = data_for_reply_save_dict['form']
     user = data_for_reply_save_dict['user']
     topic = data_for_reply_save_dict['topic']
-
     post = form.save(commit=False)
     post.topic = topic
     post.created_by = user
     post.save()
-
     update_topic_last_updated(topic)
-    board_pk = topic.board.pk
-
-    topic_url = reverse('topic_posts', kwargs={'pk': board_pk, 'topic_pk': topic.pk})
-    topic_post_url = '{url}?page={page}#{id}'.format(url=topic_url, id=post.pk,
-                                                        page=topic.get_page_count()
-                                                    )
-    return topic_post_url
-        
-
+    return post
+    
 def update_topic_last_updated(topic):
     topic.last_updated = timezone.now()
     topic.save()
