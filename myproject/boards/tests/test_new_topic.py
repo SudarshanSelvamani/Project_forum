@@ -12,7 +12,7 @@ class NewTopicTests(TestCase):
         User.objects.create_user(username='john', email='john@doe.com', password='123')
         self.client.login(username='john', password='123')
 
-    def test_page_served_right(self):
+    def test_status_code_successful(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
@@ -37,7 +37,7 @@ class NewTopicTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, 'csrfmiddlewaretoken')
 
-    def test_response_contains_NewTopicForm_object(self):
+    def test_response_contains_newtopicform_object(self):
         url = reverse('new_topic', kwargs={'pk': 1})
         response = self.client.get(url)
         form = response.context.get('form')
@@ -92,9 +92,6 @@ class NewTopicTests(TestCase):
         response = self.client.post(url, data)
         self.assertFalse(Topic.objects.exists())
         self.assertFalse(Post.objects.exists())
-
-
-
 
 
 class LoginRequiredNewTopicTests(TestCase):

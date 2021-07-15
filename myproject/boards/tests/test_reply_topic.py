@@ -34,7 +34,7 @@ class ReplyTopicTests(ReplyTopicTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.get(self.url)
 
-    def test_page_served_right(self):
+    def test_page_serve_successful(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_url_resolves_PostListView(self):
@@ -44,11 +44,11 @@ class ReplyTopicTests(ReplyTopicTestCase):
     def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_response_contains_PostForm_object(self):
+    def test_response_contains_postform_object(self):
         form = self.response.context.get('form')
         self.assertIsInstance(form, PostForm)
 
-    def test_PostForm_inputs(self):
+    def test_postform_inputs(self):
         '''
         The view must contain two inputs: csrf, message textarea
         '''
@@ -62,7 +62,7 @@ class SuccessfulReplyTopicTests(ReplyTopicTestCase):
         self.client.login(username=self.username, password=self.password)
         self.response = self.client.post(self.url, {'message': 'hello, world!'})
 
-    def test_redirect_postListView_after_reply(self):
+    def test_redirect_postlistview_after_reply(self):
         '''
         A valid form submission should redirect the user
         '''
