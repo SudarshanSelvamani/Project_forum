@@ -6,13 +6,13 @@ from ..views import BoardListView
 
 #Home view(BoardListView) is tested. 
 
-class HomeTests(TestCase):
+class BoardListViewTests(TestCase):
     def setUp(self):
         self.board = Board.objects.create(name='Django', description='Django board.')
         url = reverse('home')
         self.response = self.client.get(url)
 
-    def test_page_served_right(self):
+    def test_success_status_code(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_home_url_resolves_home_view(self):

@@ -11,7 +11,7 @@ class SignUpTests(TestCase):
         url = reverse('signup')
         self.response = self.client.get(url)
 
-    def test_page_is_served_right(self):
+    def test_status_code_successful(self):
         self.assertEquals(self.response.status_code, 200)
 
     def test_signup_url_resolves_signup_view(self):

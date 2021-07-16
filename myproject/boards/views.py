@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, F
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import UpdateView, ListView
@@ -22,9 +22,11 @@ class TopicListView(ListView):
     template_name = 'topics.html'
     paginate_by = 20
 
+
     def get_context_data(self, **kwargs):
         kwargs['board'] = self.board
         return super().get_context_data(**kwargs)
+
 
     def get_queryset(self):
         self.board = get_object_or_404(Board, pk=self.kwargs.get('pk'))
@@ -38,14 +40,16 @@ class PostListView(ListView):
     template_name = 'topic_posts.html'
     paginate_by = 20
 
+
     def get_context_data(self, **kwargs):
         session_key = 'viewed_topic_{}'.format(self.topic.pk)
         if not self.request.session.get(session_key, False):
-            self.topic.views += 1
+            self.topic.views = F('views')+1
             self.topic.save()
             self.request.session[session_key] = True    
         kwargs['topic'] = self.topic
         return super().get_context_data(**kwargs)
+
 
     def get_queryset(self):
         self.topic = get_object_or_404(Topic, board__pk=self.kwargs.get('pk'), pk=self.kwargs.get('topic_pk'))
@@ -58,11 +62,12 @@ def new_topic(request, pk):
     board = get_object_or_404(Board, pk=pk)
     form = NewTopicForm(request.POST or None)
     if form.is_valid():
-        topic = topic_and_first_post_save(request,form,board)
+        topic = save_topic_and_create_first_post(request,form,board)
         return redirect('topic_posts', pk=pk, topic_pk=topic.pk)
     return render(request, 'new_topic.html', {'board': board, 'form': form})
 
-def topic_and_first_post_save(request, form, board):
+
+def  save_topic_and_create_first_post(request, form, board):
         topic = form.save(commit=False)
         topic.board = board
         topic.starter = request.user
@@ -79,16 +84,14 @@ def topic_and_first_post_save(request, form, board):
 def reply_topic(request, pk, topic_pk):
     topic = get_object_or_404(Topic, board__pk=pk, pk=topic_pk)
     form = PostForm(request.POST or None)
-    data_for_reply_save_dict = {'form':form, 'user':request.user, 
-                                'topic':topic}
     if form.is_valid():
-        post = reply_form_save(data_for_reply_save_dict)
-        topic_post_url = generate_paginated_url_for_posts(topic,post)
+        post = save_reply_postform_and_update_topic_last_updated({'form':form, 'user':request.user, 'topic':topic})               
+        topic_post_url = get_paginated_url_for_posts(topic, post)
         return redirect(topic_post_url)
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})
 
 
-def generate_paginated_url_for_posts(topic, post):
+def get_paginated_url_for_posts(topic, post):
     board_pk = topic.board.pk
     topic_url = reverse('topic_posts', kwargs={'pk': board_pk, 'topic_pk': topic.pk})
     topic_post_url = '{url}?page={page}#{id}'.format(url=topic_url, id=post.pk,
@@ -96,7 +99,8 @@ def generate_paginated_url_for_posts(topic, post):
                                                     )
     return topic_post_url
 
-def reply_form_save(data_for_reply_save_dict):
+
+def save_reply_postform_and_update_topic_last_updated(data_for_reply_save_dict):
     form = data_for_reply_save_dict['form']
     user = data_for_reply_save_dict['user']
     topic = data_for_reply_save_dict['topic']
@@ -107,10 +111,10 @@ def reply_form_save(data_for_reply_save_dict):
     update_topic_last_updated(topic)
     return post
     
+
 def update_topic_last_updated(topic):
     topic.last_updated = timezone.now()
     topic.save()
-
 
 
 @method_decorator(login_required, name='dispatch')
@@ -133,18 +137,3 @@ class PostUpdateView(UpdateView):
         return redirect('topic_posts', pk=post.topic.board.pk, topic_pk=post.topic.pk)
 
 
-class NewPostView(View):
-    def post(self, request):
-        form = PostForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('post_list')
-        return render(request, 'new_post.html', {'form': form})
-
-    def get(self, request):
-        form = PostForm()
-        return render(request, 'new_post.html', {'form': form})
-
-    def get(self, request):
-        self.form = PostForm()
-        return self.render(request)

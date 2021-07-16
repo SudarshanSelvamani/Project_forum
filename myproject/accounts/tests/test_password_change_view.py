@@ -15,21 +15,21 @@ class PasswordChangeTests(TestCase):
         self.client.login(username=username, password=password)
         self.response = self.client.get(url)
 
-    def test_page_is_served_right(self):
+    def test_status_code_successful(self):
         self.assertEquals(self.response.status_code, 200)
 
-    def test_url_resolves_PasswordChangeView(self):
+    def test_url_resolves_passwordchangeview(self):
         view = resolve('/settings/password/')
         self.assertEquals(view.func.view_class, auth_views.PasswordChangeView)
 
     def test_presence_of_csrf(self):
         self.assertContains(self.response, 'csrfmiddlewaretoken')
 
-    def test_response_contains_PassordChangeForm(self):
+    def test_response_contains_passordchangeform_object(self):
         form = self.response.context.get('form')
         self.assertIsInstance(form, PasswordChangeForm)
 
-    def test_PasswordChangeForm_inputs(self):
+    def test_passwordchangeform_inputs(self):
         '''
         The view must contain four inputs: csrf, old_password, new_password1, new_password2
         '''
@@ -90,6 +90,7 @@ class SuccessfulPasswordChangeTests(PasswordChangeTestCase):
 
 
 class InvalidPasswordChangeTests(PasswordChangeTestCase):
+    
     def test_invalid_form_return_to_same_page(self):
         '''
         An invalid form submission should return to the same page

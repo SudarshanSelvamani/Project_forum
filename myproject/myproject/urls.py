@@ -47,7 +47,7 @@ urlpatterns = [
         auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'),
         name='password_reset_complete'),
 
-    path('settings/account/', accounts_views.UserUpdateView.as_view(), name='my_account'),
+    path('settings/account/', accounts_views.user_update_view, name='my_account'),
 
     path('settings/password/', 
         auth_views.PasswordChangeView.as_view(template_name='password_change.html'),
@@ -68,9 +68,7 @@ urlpatterns = [
 
     path('boards/<pk>/topics/<topic_pk>/posts/<post_pk>/edit/',
         views.PostUpdateView.as_view(), name='edit_post'),
-
-    path('new_post/', views.NewPostView.as_view(), name='new_post'),
-
+        
     path('admin/', admin.site.urls),
 
 ]
